@@ -1,0 +1,872 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Canvas Interactivo - Escuela Empírica de la Administración</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Plus Jakarta Sans', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            500: '#0284c7',
+                            600: '#0369a1',
+                            700: '#075985',
+                            800: '#0c4a6e',
+                            900: '#0a3651',
+                        },
+                        amberCustom: {
+                            500: '#f59e0b',
+                            600: '#d97706',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .glass-card {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(226, 232, 240, 0.8);
+        }
+        .tab-btn.active {
+            background-color: #0284c7;
+            color: #ffffff;
+            box-shadow: 0 4px 14px 0 rgba(2, 132, 199, 0.35);
+        }
+        .accordion-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+        }
+        .accordion-content.open {
+            max-height: 500px;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans antialiased min-h-screen flex flex-col">
+
+    <!-- Header / Navbar -->
+    <header class="bg-slate-900 text-white sticky top-0 z-50 shadow-md">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center space-x-3">
+                    <div class="p-2 bg-brand-500 rounded-lg text-white font-bold text-xl">
+                        <i class="fa-solid fa-graduation-cap"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-lg sm:text-xl font-bold tracking-tight text-white">Escuela Empírica</h1>
+                        <p class="text-xs text-slate-400 hidden sm:block">Canvas Interactivo de Administración Práctica</p>
+                    </div>
+                </div>
+
+                <!-- Global Search -->
+                <div class="relative w-48 sm:w-72">
+                    <input type="text" id="globalSearch" onkeyup="handleSearch()" placeholder="Buscar autor, concepto, pro..." 
+                           class="w-full pl-9 pr-4 py-1.5 text-sm bg-slate-800 text-slate-100 rounded-full border border-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500 placeholder-slate-400">
+                    <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-xs text-slate-400"></i>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Navigation Tabs -->
+    <div class="bg-white border-b border-slate-200 sticky top-16 z-40 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <nav class="flex space-x-1 sm:space-x-4 overflow-x-auto py-2 scrollbar-none" id="navTabs">
+                <button onclick="switchTab('overview')" id="tab-overview" class="tab-btn active px-4 py-2 text-xs sm:text-sm font-semibold rounded-lg transition-all flex items-center gap-2 whitespace-nowrap">
+                    <i class="fa-solid fa-compass"></i> Panorama General
+                </button>
+                <button onclick="switchTab('authors')" id="tab-authors" class="tab-btn px-4 py-2 text-xs sm:text-sm font-semibold rounded-lg text-slate-600 hover:bg-slate-100 transition-all flex items-center gap-2 whitespace-nowrap">
+                    <i class="fa-solid fa-users"></i> Autores Clave
+                </button>
+                <button onclick="switchTab('methods')" id="tab-methods" class="tab-btn px-4 py-2 text-xs sm:text-sm font-semibold rounded-lg text-slate-600 hover:bg-slate-100 transition-all flex items-center gap-2 whitespace-nowrap">
+                    <i class="fa-solid fa-book-open"></i> Metodología y Casos
+                </button>
+                <button onclick="switchTab('proscons')" id="tab-proscons" class="tab-btn px-4 py-2 text-xs sm:text-sm font-semibold rounded-lg text-slate-600 hover:bg-slate-100 transition-all flex items-center gap-2 whitespace-nowrap">
+                    <i class="fa-solid fa-scale-balanced"></i> Pros y Contras
+                </button>
+                <button onclick="switchTab('simulator')" id="tab-simulator" class="tab-btn px-4 py-2 text-xs sm:text-sm font-semibold rounded-lg text-slate-600 hover:bg-slate-100 transition-all flex items-center gap-2 whitespace-nowrap">
+                    <i class="fa-solid fa-chess-knight"></i> Simulador Gerencial
+                </button>
+                <button onclick="switchTab('quiz')" id="tab-quiz" class="tab-btn px-4 py-2 text-xs sm:text-sm font-semibold rounded-lg text-slate-600 hover:bg-slate-100 transition-all flex items-center gap-2 whitespace-nowrap">
+                    <i class="fa-solid fa-clipboard-question"></i> Autoevaluación
+                </button>
+            </nav>
+        </div>
+    </div>
+
+    <!-- Main Content Area -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+        <!-- TAB 1: OVERVIEW -->
+        <section id="content-overview" class="tab-content space-y-8">
+            <!-- Hero Banner -->
+            <div class="relative bg-gradient-to-r from-brand-900 via-brand-800 to-slate-900 rounded-2xl p-6 sm:p-10 text-white overflow-hidden shadow-xl">
+                <div class="relative z-10 max-w-3xl">
+                    <span class="inline-block px-3 py-1 bg-brand-500/30 border border-brand-400/30 text-brand-200 text-xs font-semibold rounded-full mb-3">
+                        Enfoque Práctico y Situacional
+                    </span>
+                    <h2 class="text-2xl sm:text-4xl font-extrabold tracking-tight text-white mb-4">
+                        La Experiencia como Eje de la Gestión
+                    </h2>
+                    <p class="text-slate-300 text-sm sm:text-base leading-relaxed">
+                        La <strong>Escuela Empírica de la Administración</strong> postula que las tareas administrativas deben ser aprendidas y guiadas por la <strong>práctica real, la observación de hechos pasados y el estudio de casos exitosos o fallidos</strong>. En lugar de teorizar de forma abstracta, analiza la vivencia cotidiana de los gerentes para extraer principios aplicables.
+                    </p>
+                </div>
+                <div class="absolute -right-10 -bottom-10 opacity-10 text-white text-9xl pointer-events-none">
+                    <i class="fa-solid fa-briefcase"></i>
+                </div>
+            </div>
+
+            <!-- Key Metric Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center space-x-4">
+                    <div class="p-3 bg-blue-100 text-blue-600 rounded-lg text-xl">
+                        <i class="fa-solid fa-history"></i>
+                    </div>
+                    <div>
+                        <p class="text-xs text-slate-500 font-medium">Fundamento</p>
+                        <p class="text-base font-bold text-slate-800">Precedentes Históricos</p>
+                    </div>
+                </div>
+                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center space-x-4">
+                    <div class="p-3 bg-emerald-100 text-emerald-600 rounded-lg text-xl">
+                        <i class="fa-solid fa-bullseye"></i>
+                    </div>
+                    <div>
+                        <p class="text-xs text-slate-500 font-medium">Objetivo Clave</p>
+                        <p class="text-base font-bold text-slate-800">Evitar Errores Pasados</p>
+                    </div>
+                </div>
+                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center space-x-4">
+                    <div class="p-3 bg-amber-100 text-amber-600 rounded-lg text-xl">
+                        <i class="fa-solid fa-lightbulb"></i>
+                    </div>
+                    <div>
+                        <p class="text-xs text-slate-500 font-medium">Técnica Principal</p>
+                        <p class="text-base font-bold text-slate-800">Estudio de Casos</p>
+                    </div>
+                </div>
+                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center space-x-4">
+                    <div class="p-3 bg-purple-100 text-purple-600 rounded-lg text-xl">
+                        <i class="fa-solid fa-sliders"></i>
+                    </div>
+                    <div>
+                        <p class="text-xs text-slate-500 font-medium">Carácter</p>
+                        <p class="text-base font-bold text-slate-800">Flexible y Pragmatico</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Essential Pillars -->
+            <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm space-y-6">
+                <h3 class="text-xl font-bold text-slate-900 border-b pb-3 border-slate-100 flex items-center gap-2">
+                    <i class="fa-solid fa-layer-group text-brand-600"></i> Pilares Fundamentales de la Escuela Empírica
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="p-4 bg-slate-50 rounded-xl border border-slate-200 hover:border-brand-500 transition-colors">
+                        <div class="text-brand-600 text-2xl font-bold mb-2">01</div>
+                        <h4 class="font-bold text-slate-800 mb-2">Pragmatismo Absoluto</h4>
+                        <p class="text-sm text-slate-600 leading-relaxed">
+                            La administración es un arte y una técnica práctica. El conocimiento teórico solo es útil en la medida en que resuelve problemas reales en las organizaciones.
+                        </p>
+                    </div>
+                    <div class="p-4 bg-slate-50 rounded-xl border border-slate-200 hover:border-brand-500 transition-colors">
+                        <div class="text-brand-600 text-2xl font-bold mb-2">02</div>
+                        <h4 class="font-bold text-slate-800 mb-2">Análisis de la Experiencia</h4>
+                        <p class="text-sm text-slate-600 leading-relaxed">
+                            Los administradores aprenden estudiando los aciertos y equivocaciones de otros gerentes. La historia administrativa sirve como manual guía.
+                        </p>
+                    </div>
+                    <div class="p-4 bg-slate-50 rounded-xl border border-slate-200 hover:border-brand-500 transition-colors">
+                        <div class="text-brand-600 text-2xl font-bold mb-2">03</div>
+                        <h4 class="font-bold text-slate-800 mb-2">Transferencia de Modelos</h4>
+                        <p class="text-sm text-slate-600 leading-relaxed">
+                            Aplica soluciones previamente probadas en otras empresas u organismos ajustándolas con adaptaciones mínimas a las circunstancias particulares.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 2: AUTHORS -->
+        <section id="content-authors" class="tab-content hidden space-y-6">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div>
+                    <h2 class="text-2xl font-bold text-slate-900">Autores y Pensadores Principales</h2>
+                    <p class="text-sm text-slate-500">Haz clic en cada tarjeta para explorar sus aportes específicos y filosofía.</p>
+                </div>
+                <!-- Filter Autores -->
+                <div class="flex gap-2">
+                    <button onclick="filterAuthors('all')" class="author-filter-btn active-filter px-3 py-1.5 text-xs font-semibold rounded-full bg-brand-600 text-white">Todos</button>
+                    <button onclick="filterAuthors('gestion')" class="author-filter-btn px-3 py-1.5 text-xs font-semibold rounded-full bg-slate-200 text-slate-700 hover:bg-slate-300">Gestión General</button>
+                    <button onclick="filterAuthors('humano')" class="author-filter-btn px-3 py-1.5 text-xs font-semibold rounded-full bg-slate-200 text-slate-700 hover:bg-slate-300">Relaciones Humanas</button>
+                </div>
+            </div>
+
+            <!-- Grid of Authors -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6" id="authorsGrid">
+
+                <!-- Ernest Dale -->
+                <div class="author-card bg-white rounded-2xl p-6 border border-slate-200 shadow-sm hover:shadow-md transition-all" data-category="gestion">
+                    <div class="flex items-start justify-between mb-4">
+                        <div class="flex items-center space-x-4">
+                            <div class="w-14 h-14 bg-brand-100 rounded-full flex items-center justify-center text-brand-700 font-bold text-xl border-2 border-brand-200">
+                                ED
+                            </div>
+                            <div>
+                                <h3 class="text-xl font-bold text-slate-900">Ernest Dale</h3>
+                                <p class="text-xs text-brand-600 font-semibold">Padre de la Escuela Empírica (1917–1996)</p>
+                            </div>
+                        </div>
+                        <span class="px-2.5 py-1 bg-blue-50 text-blue-700 text-xs font-bold rounded-full">Casos Prácticos</span>
+                    </div>
+                    <p class="text-sm text-slate-600 mb-4">
+                        Economista y teórico germano-estadounidense. Sostuvo que la administración debe basarse en la investigación empírica sistemática y en el estudio directo de eventos reales en las empresas.
+                    </p>
+                    <div class="space-y-2 border-t pt-3 border-slate-100">
+                        <h4 class="text-xs font-bold text-slate-700 uppercase tracking-wider">Aportes Clave:</h4>
+                        <ul class="text-xs text-slate-600 space-y-1.5 list-disc list-inside">
+                            <li>Promoción del método de <strong>Estudio de Casos</strong> en la enseñanza gerencial.</li>
+                            <li>Estudios sobre la <strong>descentralización</strong> y estructura organizacional.</li>
+                            <li>Énfasis en el aprendizaje a través del ensayo, error y sistematización de experiencia.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Peter Drucker -->
+                <div class="author-card bg-white rounded-2xl p-6 border border-slate-200 shadow-sm hover:shadow-md transition-all" data-category="gestion">
+                    <div class="flex items-start justify-between mb-4">
+                        <div class="flex items-center space-x-4">
+                            <div class="w-14 h-14 bg-emerald-100 rounded-full flex items-center justify-center text-emerald-700 font-bold text-xl border-2 border-emerald-200">
+                                PD
+                            </div>
+                            <div>
+                                <h3 class="text-xl font-bold text-slate-900">Peter Drucker</h3>
+                                <p class="text-xs text-emerald-600 font-semibold">Padre de la Administración Moderna (1905–2005)</p>
+                            </div>
+                        </div>
+                        <span class="px-2.5 py-1 bg-emerald-50 text-emerald-700 text-xs font-bold rounded-full">APO / Resultados</span>
+                    </div>
+                    <p class="text-sm text-slate-600 mb-4">
+                        Consultor austríaco-estadounidense. Llevó la administración pragmática al siguiente nivel enfocándola en objetivos claros, la eficacia del ejecutivo y la mercadotecnia.
+                    </p>
+                    <div class="space-y-2 border-t pt-3 border-slate-100">
+                        <h4 class="text-xs font-bold text-slate-700 uppercase tracking-wider">Aportes Clave:</h4>
+                        <ul class="text-xs text-slate-600 space-y-1.5 list-disc list-inside">
+                            <li><strong>Administración por Objetivos (APO):</strong> Fijación de metas participativas.</li>
+                            <li>Énfasis en los resultados tangibles más que en los procesos rígidos.</li>
+                            <li>Definición de las 5 operaciones básicas del gerente: planear, organizar, motivar, medir y desarrollar personal.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Lawrence Appley -->
+                <div class="author-card bg-white rounded-2xl p-6 border border-slate-200 shadow-sm hover:shadow-md transition-all" data-category="humano">
+                    <div class="flex items-start justify-between mb-4">
+                        <div class="flex items-center space-x-4">
+                            <div class="w-14 h-14 bg-amber-100 rounded-full flex items-center justify-center text-amber-700 font-bold text-xl border-2 border-amber-200">
+                                LA
+                            </div>
+                            <div>
+                                <h3 class="text-xl font-bold text-slate-900">Lawrence Appley</h3>
+                                <p class="text-xs text-amber-600 font-semibold">Especialista en Liderazgo y Capacitación (1904–1997)</p>
+                            </div>
+                        </div>
+                        <span class="px-2.5 py-1 bg-amber-50 text-amber-700 text-xs font-bold rounded-full">Dirección de Personas</span>
+                    </div>
+                    <p class="text-sm text-slate-600 mb-4">
+                        Presidente de la American Management Association (AMA). Destacó que administrar no es manejar cosas, sino desarrollar personas para lograr metas grupales.
+                    </p>
+                    <div class="space-y-2 border-t pt-3 border-slate-100">
+                        <h4 class="text-xs font-bold text-slate-700 uppercase tracking-wider">Aportes Clave:</h4>
+                        <ul class="text-xs text-slate-600 space-y-1.5 list-disc list-inside">
+                            <li>Postuló: <i>"El directivo necesita a los colaboradores más que ellos a él."</i></li>
+                            <li>Desarrolló esquemas de capacitación continua para mandos medios y ejecutivos.</li>
+                            <li>Deducir principios gerenciales aplicables universalmente tras analizar cientos de empresas.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Dale Carnegie -->
+                <div class="author-card bg-white rounded-2xl p-6 border border-slate-200 shadow-sm hover:shadow-md transition-all" data-category="humano">
+                    <div class="flex items-start justify-between mb-4">
+                        <div class="flex items-center space-x-4">
+                            <div class="w-14 h-14 bg-purple-100 rounded-full flex items-center justify-center text-purple-700 font-bold text-xl border-2 border-purple-200">
+                                DC
+                            </div>
+                            <div>
+                                <h3 class="text-xl font-bold text-slate-900">Dale Carnegie</h3>
+                                <p class="text-xs text-purple-600 font-semibold">Pionero en Relaciones Interpersonales (1888–1955)</p>
+                            </div>
+                        </div>
+                        <span class="px-2.5 py-1 bg-purple-50 text-purple-700 text-xs font-bold rounded-full">Relaciones Humanas</span>
+                    </div>
+                    <p class="text-sm text-slate-600 mb-4">
+                        Escritor y conferencista. Aplicó el empirismo al liderazgo humano y la persuasión eficiente, enfatizando la empatía y la comunicación activa en los equipos.
+                    </p>
+                    <div class="space-y-2 border-t pt-3 border-slate-100">
+                        <h4 class="text-xs font-bold text-slate-700 uppercase tracking-wider">Aportes Clave:</h4>
+                        <ul class="text-xs text-slate-600 space-y-1.5 list-disc list-inside">
+                            <li>Entrenamiento práctico en oratoria, motivación y manejo de conflictos.</li>
+                            <li>Fomento del trabajo en equipo basado en el reconocimiento sincero del personal.</li>
+                            <li>Transformación de grupos de trabajo en equipos productivos mediante habilidades blandas.</li>
+                        </ul>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- TAB 3: METHODS & COMPARISON -->
+        <section id="content-methods" class="tab-content hidden space-y-8">
+            <div>
+                <h2 class="text-2xl font-bold text-slate-900 mb-1">Metodología y Cuadro Comparativo</h2>
+                <p class="text-sm text-slate-500">¿Cómo trabaja la Escuela Empírica frente a otros enfoques administrativos tradicionales?</p>
+            </div>
+
+            <!-- Method Process -->
+            <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                <h3 class="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+                    <i class="fa-solid fa-vial text-brand-600"></i> El Proceso del Método Empírico (Estudio de Casos)
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 relative">
+                    <div class="p-4 bg-slate-50 rounded-xl border border-slate-200 relative">
+                        <div class="w-8 h-8 bg-brand-600 text-white font-bold rounded-full flex items-center justify-center mb-3 text-sm">1</div>
+                        <h4 class="font-bold text-slate-800 text-sm mb-1">Observación de Hechos</h4>
+                        <p class="text-xs text-slate-600">Recopilación de eventos, decisiones pasadas y sus consecuencias directas en la empresa.</p>
+                    </div>
+                    <div class="p-4 bg-slate-50 rounded-xl border border-slate-200 relative">
+                        <div class="w-8 h-8 bg-brand-600 text-white font-bold rounded-full flex items-center justify-center mb-3 text-sm">2</div>
+                        <h4 class="font-bold text-slate-800 text-sm mb-1">Análisis de Casos</h4>
+                        <p class="text-xs text-slate-600">Estudio minucioso de situaciones similares experimentadas por otras organizaciones.</p>
+                    </div>
+                    <div class="p-4 bg-slate-50 rounded-xl border border-slate-200 relative">
+                        <div class="w-8 h-8 bg-brand-600 text-white font-bold rounded-full flex items-center justify-center mb-3 text-sm">3</div>
+                        <h4 class="font-bold text-slate-800 text-sm mb-1">Generalización Práctica</h4>
+                        <p class="text-xs text-slate-600">Extracción de guías, pautas y patrones aplicables para situaciones futuras.</p>
+                    </div>
+                    <div class="p-4 bg-slate-50 rounded-xl border border-slate-200 relative">
+                        <div class="w-8 h-8 bg-brand-600 text-white font-bold rounded-full flex items-center justify-center mb-3 text-sm">4</div>
+                        <h4 class="font-bold text-slate-800 text-sm mb-1">Aplicación y Ajuste</h4>
+                        <p class="text-xs text-slate-600">Implementación de la solución con ajustes continuos según los resultados obtenidos.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Comparison Table -->
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                <div class="p-6 border-b border-slate-100">
+                    <h3 class="text-lg font-bold text-slate-900">Comparativa con otras Escuelas Tradicionales</h3>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm text-slate-600">
+                        <thead class="bg-slate-100 text-slate-800 font-bold text-xs uppercase tracking-wider">
+                            <tr>
+                                <th class="p-4">Criterio</th>
+                                <th class="p-4 text-brand-700 bg-brand-50/50">Escuela Empírica</th>
+                                <th class="p-4">Escuela Científica (Taylor)</th>
+                                <th class="p-4">Escuela Clásica (Fayol)</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                            <tr>
+                                <td class="p-4 font-bold text-slate-800">Fuente del Conocimiento</td>
+                                <td class="p-4 bg-brand-50/20 font-semibold text-slate-900">Experiencia, antecedentes y casos reales.</td>
+                                <td class="p-4">Experimentos de tiempos y movimientos en taller.</td>
+                                <td class="p-4">Principios universales y funciones administrativas.</td>
+                            </tr>
+                            <tr>
+                                <td class="p-4 font-bold text-slate-800">Enfoque Principal</td>
+                                <td class="p-4 bg-brand-50/20 font-semibold text-slate-900">Pragmático, soluciones inmediatas y resultados.</td>
+                                <td class="p-4">Eficiencia operacional y estandarización de tareas.</td>
+                                <td class="p-4">Estructura organizacional y proceso administrativo.</td>
+                            </tr>
+                            <tr>
+                                <td class="p-4 font-bold text-slate-800">Método de Trabajo</td>
+                                <td class="p-4 bg-brand-50/20 font-semibold text-slate-900">Análisis de casos de estudio y comparaciones.</td>
+                                <td class="p-4">Método científico, medición cuantitativa.</td>
+                                <td class="p-4">Deducción teórica y principios de dirección.</td>
+                            </tr>
+                            <tr>
+                                <td class="p-4 font-bold text-slate-800">Flexibilidad</td>
+                                <td class="p-4 bg-brand-50/20 font-semibold text-slate-900">Alta: se adapta a las circunstancias concretas.</td>
+                                <td class="p-4">Baja: busca la 'única forma óptima' (One best way).</td>
+                                <td class="p-4">Media: estructurada pero basada en principios.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 4: PROS & CONS -->
+        <section id="content-proscons" class="tab-content hidden space-y-6">
+            <div>
+                <h2 class="text-2xl font-bold text-slate-900 mb-1">Ventajas y Limitaciones</h2>
+                <p class="text-sm text-slate-500">Evaluación crítica del modelo empírico en la gestión moderna.</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+                <!-- Ventajas -->
+                <div class="bg-emerald-50/50 rounded-2xl p-6 border border-emerald-200">
+                    <div class="flex items-center space-x-3 mb-4">
+                        <div class="p-2.5 bg-emerald-600 text-white rounded-lg text-lg">
+                            <i class="fa-solid fa-thumbs-up"></i>
+                        </div>
+                        <h3 class="text-xl font-bold text-emerald-900">Ventajas Principales</h3>
+                    </div>
+                    <div class="space-y-3">
+                        <div class="bg-white p-4 rounded-xl border border-emerald-100 shadow-sm">
+                            <h4 class="font-bold text-slate-800 text-sm mb-1">1. Aplicabilidad Práctica e Inmediata</h4>
+                            <p class="text-xs text-slate-600">Ofrece respuestas rápidas y modelos funcionales probados en situaciones reales de negocios.</p>
+                        </div>
+                        <div class="bg-white p-4 rounded-xl border border-emerald-100 shadow-sm">
+                            <h4 class="font-bold text-slate-800 text-sm mb-1">2. Objetivos y Resultados Claros</h4>
+                            <p class="text-xs text-slate-600">Al enfocarse en el desempeño (como en la APO de Drucker), concentra la energía gerencial en metas medibles.</p>
+                        </div>
+                        <div class="bg-white p-4 rounded-xl border border-emerald-100 shadow-sm">
+                            <h4 class="font-bold text-slate-800 text-sm mb-1">3. Reducción de Errores Comunes</h4>
+                            <p class="text-xs text-slate-600">Al analizar antecedentes históricos, evita tropezar con las mismas fallas cometidas por otras empresas.</p>
+                        </div>
+                        <div class="bg-white p-4 rounded-xl border border-emerald-100 shadow-sm">
+                            <h4 class="font-bold text-slate-800 text-sm mb-1">4. Adaptabilidad y Agilidad</h4>
+                            <p class="text-xs text-slate-600">Al no estar atada a dogmas rígidos, permite hacer ajustes situacionales de forma flexible.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Desventajas -->
+                <div class="bg-rose-50/50 rounded-2xl p-6 border border-rose-200">
+                    <div class="flex items-center space-x-3 mb-4">
+                        <div class="p-2.5 bg-rose-600 text-white rounded-lg text-lg">
+                            <i class="fa-solid fa-thumbs-down"></i>
+                        </div>
+                        <h3 class="text-xl font-bold text-rose-900">Limitaciones y Críticas</h3>
+                    </div>
+                    <div class="space-y-3">
+                        <div class="bg-white p-4 rounded-xl border border-rose-100 shadow-sm">
+                            <h4 class="font-bold text-slate-800 text-sm mb-1">1. Orientación Excesiva al Pasado</h4>
+                            <p class="text-xs text-slate-600">Asume que el futuro repetirá el pasado. En entornos disruptivos y cambiantes, la historia no siempre se repite.</p>
+                        </div>
+                        <div class="bg-white p-4 rounded-xl border border-rose-100 shadow-sm">
+                            <h4 class="font-bold text-slate-800 text-sm mb-1">2. Falta de Rigor Científico</h4>
+                            <p class="text-xs text-slate-600">Suele basarse en juicios subjetivos y experiencias individuales que no siempre son generalizables.</p>
+                        </div>
+                        <div class="bg-white p-4 rounded-xl border border-rose-100 shadow-sm">
+                            <h4 class="font-bold text-slate-800 text-sm mb-1">3. Curva de Aprendizaje Lenta</h4>
+                            <p class="text-xs text-slate-600">Aprender únicamente a través de la práctica y el error consume mucho tiempo y recursos organizacionales.</p>
+                        </div>
+                        <div class="bg-white p-4 rounded-xl border border-rose-100 shadow-sm">
+                            <h4 class="font-bold text-slate-800 text-sm mb-1">4. Informalidad Estructural</h4>
+                            <p class="text-xs text-slate-600">Puede llevar a una comunicación informal y falta de normativas internas bien estructuradas.</p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- TAB 5: SIMULATOR -->
+        <section id="content-simulator" class="tab-content hidden space-y-6">
+            <div class="bg-white rounded-2xl p-6 sm:p-8 border border-slate-200 shadow-sm">
+                <div class="flex items-center justify-between border-b pb-4 border-slate-100 mb-6">
+                    <div>
+                        <span class="px-3 py-1 bg-brand-100 text-brand-700 font-bold text-xs rounded-full">Toma de Decisiones</span>
+                        <h2 class="text-2xl font-bold text-slate-900 mt-1">Simulador Gerencial Empírico</h2>
+                    </div>
+                    <div class="text-right">
+                        <span class="text-xs text-slate-500">Puntaje Gerencial</span>
+                        <p id="simScore" class="text-xl font-bold text-brand-600">0 pts</p>
+                    </div>
+                </div>
+
+                <div id="simScenarioArea">
+                    <!-- Scenario Content injected via JS -->
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 6: QUIZ -->
+        <section id="content-quiz" class="tab-content hidden space-y-6">
+            <div class="bg-white rounded-2xl p-6 sm:p-8 border border-slate-200 shadow-sm max-w-3xl mx-auto">
+                <div class="flex items-center justify-between border-b pb-4 border-slate-100 mb-6">
+                    <div>
+                        <span class="px-3 py-1 bg-amber-100 text-amber-800 font-bold text-xs rounded-full">Evaluación Rápida</span>
+                        <h2 class="text-2xl font-bold text-slate-900 mt-1">Quiz de la Escuela Empírica</h2>
+                    </div>
+                    <div id="quizProgress" class="text-sm font-semibold text-slate-500">Pregunta 1 de 5</div>
+                </div>
+
+                <div id="quizArea">
+                    <!-- Dynamic Quiz Content -->
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-slate-900 text-slate-400 py-6 border-t border-slate-800 text-xs text-center">
+        <div class="max-w-7xl mx-auto px-4">
+            <p>Canvas Interactivo - Escuela Empírica de la Administración</p>
+            <p class="mt-1 text-slate-500">Basado en las aportaciones de Ernest Dale, Peter Drucker, Lawrence Appley y Dale Carnegie.</p>
+        </div>
+    </footer>
+
+    <!-- Interactive Scripts -->
+    <script>
+        // TAB SWITCHING
+        function switchTab(tabId) {
+            // Hide all contents
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            // Remove active from all tabs
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+                btn.classList.add('text-slate-600');
+            });
+
+            // Show selected content
+            const targetContent = document.getElementById('content-' + tabId);
+            if (targetContent) targetContent.classList.remove('hidden');
+
+            // Highlight selected tab
+            const targetBtn = document.getElementById('tab-' + tabId);
+            if (targetBtn) {
+                targetBtn.classList.add('active');
+                targetBtn.classList.remove('text-slate-600');
+            }
+
+            if (tabId === 'simulator') loadScenario(currentScenarioIndex);
+            if (tabId === 'quiz') renderQuizQuestion();
+        }
+
+        // GLOBAL SEARCH
+        function handleSearch() {
+            const query = document.getElementById('globalSearch').value.toLowerCase().trim();
+            if (!query) return;
+
+            // Highlight matching cards or switch tab if needed
+            const authorCards = document.querySelectorAll('.author-card');
+            let foundInAuthors = false;
+
+            authorCards.forEach(card => {
+                const text = card.innerText.toLowerCase();
+                if (text.includes(query)) {
+                    card.style.display = 'block';
+                    card.classList.add('ring-2', 'ring-brand-500');
+                    foundInAuthors = true;
+                } else {
+                    card.classList.remove('ring-2', 'ring-brand-500');
+                }
+            });
+
+            if (foundInAuthors) {
+                switchTab('authors');
+            }
+        }
+
+        // AUTHOR FILTER
+        function filterAuthors(category) {
+            document.querySelectorAll('.author-filter-btn').forEach(btn => {
+                btn.classList.remove('bg-brand-600', 'text-white');
+                btn.classList.add('bg-slate-200', 'text-slate-700');
+            });
+            event.target.classList.remove('bg-slate-200', 'text-slate-700');
+            event.target.classList.add('bg-brand-600', 'text-white');
+
+            const cards = document.querySelectorAll('.author-card');
+            cards.forEach(card => {
+                if (category === 'all' || card.dataset.category === category) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        }
+
+        // GERENCIAL SIMULATOR DATA
+        let simScore = 0;
+        let currentScenarioIndex = 0;
+
+        const scenarios = [
+            {
+                title: "Caso 1: Caída de ventas en el sector minorista",
+                description: "Tu empresa enfrenta una disminución del 15% en las ventas de la división minorista debido a la entrada de un competidor agresivo. ¿Cómo abordas el problema según la Escuela Empírica?",
+                options: [
+                    {
+                        text: "Analizar el historial de crisis anteriores de tu empresa y estudiar casos documentados de competidores que superaron escenarios similares.",
+                        points: 10,
+                        feedback: "¡Excelente decisión empírica! Basarte en antecedentes probados e investigar soluciones aplicadas con éxito en otras organizaciones es la esencia de Ernest Dale y la Escuela Empírica."
+                    },
+                    {
+                        text: "Diseñar una teoría matemática completamente nueva sin revisar la historia previa ni hablar con gerentes con experiencia.",
+                        points: 0,
+                        feedback: "Incorrecto desde el enfoque empírico. Ignorar la experiencia acumulada y los casos de estudio expone a la empresa a cometer errores ya superados en el pasado."
+                    },
+                    {
+                        text: "Esperar a que el mercado cambie solo sin tomar decisiones gerenciales dirigidas a resultados.",
+                        points: 2,
+                        feedback: "Poco efectivo. Peter Drucker enfatiza que el gerente debe actuar activamente orientado a resultados concretos y objetivos claros."
+                    }
+                ]
+            },
+            {
+                title: "Caso 2: Conflicto e ineficiencia en el equipo gerencial",
+                description: "Los jefes de departamento no se coordinan bien y muestran resistencia a las nuevas metas. Deseas elevar la productividad y la colaboración. ¿Qué principio aplicas?",
+                options: [
+                    {
+                        text: "Aplicar el principio de Lawrence Appley y Dale Carnegie: capacitar a los mandos, motivar mediante buenas relaciones humanas y recordar que el éxito del ejecutivo depende del éxito de sus colaboradores.",
+                        points: 10,
+                        feedback: "¡Correcto! Lawrence Appley argumentaba que administrar es desarrollar a las personas y Dale Carnegie demostró que el reconocimiento e incentivo eleva la productividad."
+                    },
+                    {
+                        text: "Sancionar a todos los colaboradores e imponer metas sin consulta previa ni comunicación.",
+                        points: 0,
+                        feedback: "Incorrecto. Genera resistencia y desconexión. La Escuela Empírica (vía APO y relaciones humanas) promueve la participación activa en los objetivos."
+                    }
+                ]
+            },
+            {
+                title: "Caso 3: Establecimiento de Metas Anuales",
+                description: "Es momento de fijar el plan de trabajo para el próximo año. ¿Cómo defines los objetivos organizacionales?",
+                options: [
+                    {
+                        text: "Implementar la Administración por Objetivos (APO) de Peter Drucker: acordar metas medibles y evaluables junto con los responsables de cada área.",
+                        points: 10,
+                        feedback: "¡Brillante! La APO de Drucker es el referente clave para alinear esfuerzos individuales con los resultados estratégicos de la empresa."
+                    },
+                    {
+                        text: "Dejar que cada empleado trabaje sin metas fijas ni indicadores de resultados.",
+                        points: 0,
+                        feedback: "Ineficaz. Sin objetivos claros ni medición de resultados es imposible evaluar el progreso o corregir el rumbo."
+                    }
+                ]
+            }
+        ];
+
+        function loadScenario(index) {
+            const area = document.getElementById('simScenarioArea');
+            if (index >= scenarios.length) {
+                area.innerHTML = `
+                    <div class="text-center py-8">
+                        <div class="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto text-2xl mb-4">
+                            <i class="fa-solid fa-trophy"></i>
+                        </div>
+                        <h3 class="text-2xl font-bold text-slate-800 mb-2">Simulación Completada</h3>
+                        <p class="text-slate-600 text-sm mb-4">Has obtenido un total de <strong>${simScore} puntos</strong> demostrando criterio pragmático y gerencial.</p>
+                        <button onclick="restartSim()" class="px-6 py-2.5 bg-brand-600 text-white font-bold text-sm rounded-lg hover:bg-brand-700 transition-colors">
+                            Reiniciar Simulador
+                        </button>
+                    </div>
+                `;
+                return;
+            }
+
+            const sc = scenarios[index];
+            let optionsHtml = '';
+            sc.options.forEach((opt, idx) => {
+                optionsHtml += `
+                    <button onclick="makeSimChoice(${index}, ${idx})" class="w-full text-left p-4 rounded-xl border border-slate-200 hover:border-brand-500 hover:bg-brand-50/50 transition-all text-sm font-medium text-slate-700 mb-3 flex items-start space-x-3">
+                        <span class="w-6 h-6 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">${String.fromCharCode(65 + idx)}</span>
+                        <span>${opt.text}</span>
+                    </button>
+                `;
+            });
+
+            area.innerHTML = `
+                <div class="space-y-4">
+                    <h3 class="text-lg font-bold text-slate-800">${sc.title}</h3>
+                    <p class="text-sm text-slate-600 leading-relaxed">${sc.description}</p>
+                    <div class="pt-2">${optionsHtml}</div>
+                </div>
+            `;
+        }
+
+        function makeSimChoice(scenarioIdx, optionIdx) {
+            const choice = scenarios[scenarioIdx].options[optionIdx];
+            simScore += choice.points;
+            document.getElementById('simScore').innerText = `${simScore} pts`;
+
+            const area = document.getElementById('simScenarioArea');
+            area.innerHTML = `
+                <div class="space-y-4">
+                    <div class="p-4 rounded-xl border ${choice.points > 0 ? 'bg-emerald-50 border-emerald-200 text-emerald-900' : 'bg-rose-50 border-rose-200 text-rose-900'}">
+                        <h4 class="font-bold text-sm mb-1">${choice.points > 0 ? '¡Buen Criterio Empírico!' : 'Decisión Poco Eficaz'}</h4>
+                        <p class="text-xs leading-relaxed">${choice.feedback}</p>
+                    </div>
+                    <button onclick="nextScenario()" class="px-5 py-2 bg-brand-600 text-white text-xs font-bold rounded-lg hover:bg-brand-700 transition-colors">
+                        Siguiente Caso <i class="fa-solid fa-arrow-right ml-1"></i>
+                    </button>
+                </div>
+            `;
+        }
+
+        function nextScenario() {
+            currentScenarioIndex++;
+            loadScenario(currentScenarioIndex);
+        }
+
+        function restartSim() {
+            simScore = 0;
+            currentScenarioIndex = 0;
+            document.getElementById('simScore').innerText = '0 pts';
+            loadScenario(0);
+        }
+
+        // QUIZ DATA
+        const quizQuestions = [
+            {
+                q: "¿Cuál es la premisa fundamental de la Escuela Empírica de la Administración?",
+                options: [
+                    "La administración debe guiarse por la experiencia práctica y el estudio de casos reales.",
+                    "La administración solo se basa en ecuaciones matemáticas puras.",
+                    "No se deben considerar los antecedentes históricos para tomar decisiones.",
+                    "Los gerentes nunca cometen errores si siguen reglamentos rígidos."
+                ],
+                correct: 0,
+                explanation: "La escuela empírica sostiene que la mejor forma de administrar es analizando las experiencias pasadas, casos de éxito y errores previos."
+            },
+            {
+                q: "¿Quién es considerado el principal representante y fundador de la Escuela Empírica?",
+                options: [
+                    "Max Weber",
+                    "Ernest Dale",
+                    "Elton Mayo",
+                    "Henry Ford"
+                ],
+                correct: 1,
+                explanation: "Ernest Dale es reconocido como la figura central de esta corriente por sus trabajos basados en la investigación de campo y casos prácticos."
+            },
+            {
+                q: "Peter Drucker es famoso por desarrollar el concepto de:",
+                options: [
+                    "La línea de ensamblaje automatizada",
+                    "Administración por Objetivos (APO)",
+                    "El experimento de Hawthorne",
+                    "La burocracia ideal"
+                ],
+                correct: 1,
+                explanation: "Drucker acuñó y popularizó la APO (Administración por Objetivos), centrada en resultados y metas coordinadas."
+            },
+            {
+                q: "¿Cuál se considera la principal ventaja de aplicar la Escuela Empírica?",
+                options: [
+                    "Evitar errores pasados usando modelos probados en situaciones reales.",
+                    "Garantizar que nunca cambiará el entorno del mercado.",
+                    "Eliminar completamente la necesidad de capacitación gerencial.",
+                    "Crear sistemas burocráticos inflexibles."
+                ],
+                correct: 0,
+                explanation: "Al basarse en antecedentes verificados, ayuda a repetir aciertos y prevenir errores previamente documentados."
+            },
+            {
+                q: "¿Cuál es una de las principales críticas o desventajas señaladas a esta escuela?",
+                options: [
+                    "Está demasiado orientada al pasado y asume que las situaciones siempre se repiten.",
+                    "Requiere demasiado uso de cálculo diferencial.",
+                    "Solo se puede aplicar en empresas gubernamentales.",
+                    "No le importan los resultados concretos."
+                ],
+                correct: 0,
+                explanation: "Se le critica su mirada hacia el pasado, ya que en entornos dinámicos y cambiantes las condiciones históricas no siempre se repiten."
+            }
+        ];
+
+        let currentQuizIndex = 0;
+        let quizScore = 0;
+
+        function renderQuizQuestion() {
+            const container = document.getElementById('quizArea');
+            const progress = document.getElementById('quizProgress');
+
+            if (currentQuizIndex >= quizQuestions.length) {
+                container.innerHTML = `
+                    <div class="text-center py-8">
+                        <div class="w-16 h-16 bg-brand-100 text-brand-600 rounded-full flex items-center justify-center mx-auto text-2xl mb-4">
+                            <i class="fa-solid fa-award"></i>
+                        </div>
+                        <h3 class="text-2xl font-bold text-slate-800 mb-2">¡Quiz Finalizado!</h3>
+                        <p class="text-slate-600 text-sm mb-6">Obtuviste <strong>${quizScore}</strong> de <strong>${quizQuestions.length}</strong> respuestas correctas.</p>
+                        <button onclick="restartQuiz()" class="px-6 py-2.5 bg-brand-600 text-white font-bold text-sm rounded-lg hover:bg-brand-700 transition-colors">
+                            Intentar de Nuevo
+                        </button>
+                    </div>
+                `;
+                progress.innerText = "Completado";
+                return;
+            }
+
+            const qData = quizQuestions[currentQuizIndex];
+            progress.innerText = `Pregunta ${currentQuizIndex + 1} de ${quizQuestions.length}`;
+
+            let optsHtml = '';
+            qData.options.forEach((opt, idx) => {
+                optsHtml += `
+                    <button onclick="checkQuizAnswer(${idx})" class="w-full text-left p-4 rounded-xl border border-slate-200 hover:border-brand-500 hover:bg-slate-50 transition-all text-sm font-medium text-slate-700 mb-3">
+                        ${opt}
+                    </button>
+                `;
+            });
+
+            container.innerHTML = `
+                <div class="space-y-4">
+                    <h3 class="text-lg font-bold text-slate-800">${qData.q}</h3>
+                    <div class="pt-2">${optsHtml}</div>
+                </div>
+            `;
+        }
+
+        function checkQuizAnswer(selectedIdx) {
+            const qData = quizQuestions[currentQuizIndex];
+            const container = document.getElementById('quizArea');
+            const isCorrect = selectedIdx === qData.correct;
+
+            if (isCorrect) quizScore++;
+
+            container.innerHTML = `
+                <div class="space-y-4">
+                    <div class="p-4 rounded-xl border ${isCorrect ? 'bg-emerald-50 border-emerald-200 text-emerald-900' : 'bg-rose-50 border-rose-200 text-rose-900'}">
+                        <h4 class="font-bold text-sm mb-1">${isCorrect ? '¡Correcto!' : 'Respuesta Incorrecta'}</h4>
+                        <p class="text-xs leading-relaxed">${qData.explanation}</p>
+                    </div>
+                    <button onclick="nextQuizQuestion()" class="px-5 py-2 bg-brand-600 text-white text-xs font-bold rounded-lg hover:bg-brand-700 transition-colors">
+                        Siguiente Pregunta <i class="fa-solid fa-arrow-right ml-1"></i>
+                    </button>
+                </div>
+            `;
+        }
+
+        function nextQuizQuestion() {
+            currentQuizIndex++;
+            renderQuizQuestion();
+        }
+
+        function restartQuiz() {
+            currentQuizIndex = 0;
+            quizScore = 0;
+            renderQuizQuestion();
+        }
+
+        // Initialize default view
+        document.addEventListener('DOMContentLoaded', () => {
+            switchTab('overview');
+        });
+    </script>
+</body>
+</html>
